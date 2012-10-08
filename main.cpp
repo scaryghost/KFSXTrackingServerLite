@@ -1,4 +1,6 @@
+#include <climits>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <sqlite3.h>
 
@@ -12,14 +14,18 @@ using std::cerr;
 using std::cout;
 using std::endl;
 using std::string;
+using std::stringstream;
 
 Logger *logger;
 ConsoleHandler consoleH;
 FileHandler fileH;
 
+void start(sqlite3 *db, int udpPort);
+int dbCallback(void *tableName, int argc, char **argv, char **azColName);
+
 int main(int argc, char **argv) {
     string dbPath;
-    int udpPort;
+    int udpPort= 6000;
     CLIBuilder *cli= CLIBuilder::getBuilder();
 
     cli->setUsage("kfsxtslite [options]");
@@ -35,33 +41,52 @@ int main(int argc, char **argv) {
     cli->parse(argc, argv);
 
     logger= Logger::getLogger("KFSXTrackingServerLite");
+    logger->addHandler(&consoleH);
+    logger->addHandler(&fileH);
 
     sqlite3 *db;
     int rc;
-    char *zErrMsg;
-
-    logger->addHandler(&consoleH);
-    logger->addHandler(&fileH);
     rc= sqlite3_open(dbPath.c_str(), &db);
-
     if (rc) {
         logger->log(Level::SEVERE, "Cannot open database: " + dbPath);
         return -1;
     }
 
-    auto callback= [](void *NotUsed, int argc, char **argv, char **azColName) -> int {
-        int i;
-        for(i=0; i<argc; i++){
-            logger->log(Level::INFO, string(azColName[i]) + " = " + (argv[i] ? argv[i] : "NULL"));
-        }
-        return 0;
-    };
+    start(db, udpPort);
 
+/**
+    char *zErrMsg;
     rc= sqlite3_exec(db, "select * from difficulties", callback, NULL, &zErrMsg);
     if (rc!=SQLITE_OK) {
         logger->log(Level::SEVERE, string("SQL error: ") + zErrMsg);
         sqlite3_free(zErrMsg);
     }
+*/
     sqlite3_close(db);
     return 0;
+}
+
+int dbCallback(void *tableName, int argc, char **argv, char **azColName) {
+    for(int i=0; i<argc; i++){
+        logger->log(Level::INFO, string(azColName[i]) + " = " + (argv[i] ? argv[i] : "NULL"));
+    }
+    return 0;
+}
+
+void start(sqlite3 *db, int udpPort) {
+    stringstream info(stringstream::out);
+    DatagramSocket socket;
+    DatagramPacket packet(INT_MAX);
+
+    try {
+        socket.bind(udpPort);
+        info << "Starting kfsxtslite server on UDP port: " << udpPort;
+        logger->log(Level::INFO, info.str());
+        while(true) {
+            socket.receive(packet);
+            logger->log(Level::INFO, "Received: " + packet.getData());
+        }
+    } catch (S1004LibException &ex) {
+        logger->log(Level::SEVERE, ex.what());
+    }
 }
