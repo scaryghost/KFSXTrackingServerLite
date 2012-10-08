@@ -1,3 +1,6 @@
+# log files
+*.log
+
 # vim temp file
 *.swp
 
