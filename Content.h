@@ -30,6 +30,10 @@ public:
      */
     ~Content();
 
+
+private:
+    sqlite3 *db;            ///< Pointer to the sqlite database
+    
     /**
      * Add values to the given difficulty name and length.  If said name length pairing is not present, 
      * a new one will be inserted into the database
@@ -39,7 +43,7 @@ public:
      * @param   losses  Number of losses to add
      * @param   time    Time offset to add
      */
-    Content& addDiff(const std::string &name, const std::string &length, int wins, int losses, int wave, Time time);
+    Content& updateDiff(const std::string &name, const std::string &length, int wins, int losses, int wave, Time time);
     /**
      * Add values to the given level name.  If level name does not exist, a new one will be inserted
      * @param   name    Level name
@@ -47,7 +51,7 @@ public:
      * @param   losses  Number of losses to add
      * @param   time    Tim offset to add
      */
-    Content& addLevel(const std::string &name, int wins, int losses, const Time &time);
+    Content& updateLevel(const std::string &name, int wins, int losses, Time time);
     /**
      * Add values to the given player steamID64 and stat category.  If the steamID64/category pairing 
      * does not exist, a new entry will be inserted into the database
@@ -55,7 +59,7 @@ public:
      * @param   category    Stat category the set of stats belong to
      * @param   stats       Set of stats and their new offsets to add
      */
-    Content& addPlayer(const std::string &steamID64, const std::string &category, const std::unordered_map<std::string, int> &stats);
+    Content& updatePlayer(const std::string &steamID64, const std::string &category, std::unordered_map<std::string, int> stats);
     /**
      * Add value to the given stat in the specified category.  If the category/stat pairing 
      * does not exist, a new entry will be inserted
@@ -63,7 +67,7 @@ public:
      * @param   stat        Name of the stat
      * @param   value       Offset to add to the value
      */
-    Content& addAggregate(const std::string &category, const std::string &stat, int value);
+    Content& updateAggregate(const std::string &category, const std::string &stat, long value);
     /**
      * Add record values to the specified steamID64.  If the steamID64 does not exist, it will be inserted
      * @param   steamID64   Player's steamID64
@@ -71,16 +75,14 @@ public:
      * @param   losses      Number of losses to add
      * @param   disconnects Number of disconnects to add
      */
-    Content& addRecord(const std::string &steamID64, int wins, int losses, int disconnects);
+    Content& updateRecord(const std::string &steamID64, int wins, int losses, int disconnects);
     /**
      * Add tally to the given source of death.  If the death source does not exist, it will be inserted
      * @param   name    Name of the source of death
      * @param   value   Number of deaths caused by the source
      */
-    Content& addDeaths(const std::string &name, int value);
+    Content& updateDeaths(const std::string &name, int value);
 
-private:
-    sqlite3 *db;            ///< Pointer to the sqlite database
 };  //class Content
 
 }   //namespace kfsxtslite
