@@ -11,15 +11,6 @@ using std::atol;
 using std::runtime_error;
 using std::stringstream;
 
-int Content::hashCode(const std::string& str) {
-    int hash= 0;
-
-    for(unsigned int i= 0; i < std.size(); i++) {
-        code= (code << 5) - code + (int)str[i];
-    }
-    return code;
-}
-
 Content::Content(const std::string &dbPath) throw(std::runtime_error) {
     if (sqlite3_open(dbPath.c_str(), &db)) {
         throw runtime_error("Cannot open database: " + dbPath);
@@ -80,7 +71,7 @@ Content::Content& updatePlayer(const std::string &steamID64, const std::string &
     int id= hashCode(steamID64 + "-" + category);
     vector<string> newStats(stats.size());
     auto playerTable= [&stats](void *tableName, int argc, char **argv, char **colName) -> int {
-        vector<string> statPairs= split(argv[3], ',');
+        vector<string> statPairs= Utils::split(argv[3], ',');
 
         for(auto it= statPair.begin(); it != statPair.end(); it++) {
             vector<string> keyval= split(*it, '=');
@@ -102,7 +93,7 @@ Content::Content& updatePlayer(const std::string &steamID64, const std::string &
     }
     upsert << "replace into player (id, steamid, stats, category) values (" << 
         id << ", coalesce(( select steamid from player where id=" << id << "),\'" << steamID64 << "\'), \'" << 
-        join(newStats) << "\', coalesce(( select category from player where id=" << id << "),\'" << category << "\'));";
+        Utils::join(newStats) << "\', coalesce(( select category from player where id=" << id << "),\'" << category << "\'));";
     sqlite3_exec(db, upsert.str().c_str(), NULL, NULL, errMsg);
 
     return *this;

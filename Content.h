@@ -2,6 +2,8 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "Utils.h"
+
 namespace etsai {
 namespace kfsxtslite {
 
@@ -11,14 +13,6 @@ namespace kfsxtslite {
  */
 class Content {
 public:
-    /**
-     * Generates a hash code from the string.  The algorithm is equivalent to the one used by 
-     * Java's string class
-     * @param   str     String to generate hash code from
-     * @return  Hash code of the string
-     */
-    static int hashCode(const std::string& str);
-
     /**
      * Constructs a Content object, using the given database for persistence
      * @param   dbPath  Path to the database
