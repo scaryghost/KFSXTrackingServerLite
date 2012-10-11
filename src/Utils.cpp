@@ -10,19 +10,19 @@ using std::vector;
 int Utils::hashCode(const std::string &str) {
     int hash= 0;
 
-    for(unsigned int i= 0; i < str.size(); i++) {
-        code= (code << 5) - code + (int)str[i];
+    for(size_t i= 0; i < str.size(); i++) {
+        hash= (hash << 5) - hash + (int)str[i];
     }
-    return code;
+    return hash;
 }
 
 std::vector<std::string> Utils::split(const std::string &str, char separator) {
     vector<string> elems;
-    unsigned int i= 0;
+    size_t i= 0;
+    size_t loc= 0;
 
-    while(i < str.size()) {
-        int loc= str.find(separator, i);
-
+    while(loc >= 0 && i < str.size()) {
+        loc= str.find(separator, i);
         if (loc != i) {
             elems.push_back(str.substr(i, (loc - i)));
         }
