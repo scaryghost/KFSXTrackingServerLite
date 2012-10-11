@@ -4,7 +4,7 @@ EXT_LIB_LIST=stoughton1004 \
     sqlite3
 INC_DIR_LIST=. /media/hdd2/local/share/include
 
-SRC_LIST=Time.cpp
+SRC_LIST=Time.cpp Utils.cpp Content.cpp
 MAIN=main.cpp
 EXE=kfsxtslite
 
