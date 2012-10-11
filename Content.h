@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "Time.h"
 #include "Utils.h"
 
 namespace etsai {

@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <sstream>
+#include <vector>
 
 namespace etsai {
 namespace kfsxtslite {
@@ -9,7 +10,9 @@ namespace kfsxtslite {
 using std::atoi;
 using std::atol;
 using std::runtime_error;
+using std::string;
 using std::stringstream;
+using std::vector;
 
 Content::Content(const std::string &dbPath) throw(std::runtime_error) {
     if (sqlite3_open(dbPath.c_str(), &db)) {
@@ -21,15 +24,16 @@ Content::~Content() {
     sqlite3_close(db);
 }
 
-Content::Content& updateDiff(const std::string &name, const std::string &length, int wins, int losses, int wave, Time time) {
+Content& Content::updateDiff(const std::string &name, const std::string &length, int wins, int losses, int wave, Time time) {
     char errMsg[128];
     stringstream select(stringstream::out), upsert(stringstream::out);
-    int id= hashCode(name + "-" + length);
-    auto diffTable= [&wins, &losses, &time](void *tableName, int argc, char **argv, char **colName) -> int {
+    int id= Utils::hashCode(name + "-" + length);
+    auto diffTable= [&wins, &losses, &wave, &time](void *tableName, int argc, char **argv, char **colName) -> int {
         wins+= atoi(argv[3]);
         losses+= atoi(argv[4]);
         wave+= atoi(argv[5]);
         time.add(argv[6]);
+        return 0;
     };
 
     select << "select * from difficulties where id=" << id;
@@ -44,14 +48,15 @@ Content::Content& updateDiff(const std::string &name, const std::string &length,
     return *this;
 }
 
-Content::Content& updateLevel(const std::string &name, int wins, int losses, Time time) {
+Content& Content::updateLevel(const std::string &name, int wins, int losses, Time time) {
     char errMsg[128];
     stringstream select(stringstream::out), upsert(stringstream::out);
-    int  id= hashCode(name);
+    int  id= Utils::hashCode(name);
     auto levelTable= [&wins, &losses, &time](void *tableName, int argc, char **argv, char **colName) -> int {
         wins+= atoi(argv[2]);
         losses+= atoi(argv[3]);
         time.add(argv[4]);
+        return 0;
     };
     
     select << "select * from levels where id=" << id;
@@ -65,22 +70,23 @@ Content::Content& updateLevel(const std::string &name, int wins, int losses, Tim
     return *this;
 }
 
-Content::Content& updatePlayer(const std::string &steamID64, const std::string &category, std::unordered_map<std::string, int> stats) {
+Content& Content::updatePlayer(const std::string &steamID64, const std::string &category, std::unordered_map<std::string, int> stats) {
     char errMsg[128];
     stringstream select(stringstream::out), upsert(stringstream::out);
-    int id= hashCode(steamID64 + "-" + category);
+    int id= Utils::hashCode(steamID64 + "-" + category);
     vector<string> newStats(stats.size());
     auto playerTable= [&stats](void *tableName, int argc, char **argv, char **colName) -> int {
         vector<string> statPairs= Utils::split(argv[3], ',');
 
-        for(auto it= statPair.begin(); it != statPair.end(); it++) {
-            vector<string> keyval= split(*it, '=');
+        for(auto it= statPairs.begin(); it != statPairs.end(); it++) {
+            vector<string> keyval= Utils::split(*it, '=');
             if (stats.count(keyval[0]) == 0) {
                 stats[keyval[0]]= atoi(keyval[1]);
             } else {
                 stats[keyval[0]]+= atoi(keyval[1]);
             }
         }
+        return 0;
     };
 
     select << "select * from player where id=" << id;
@@ -99,12 +105,13 @@ Content::Content& updatePlayer(const std::string &steamID64, const std::string &
     return *this;
 }
 
-Content::Content& updateAggregate(const std::string &category, const std::string &stat, long value) {
+Content& Content::updateAggregate(const std::string &category, const std::string &stat, long value) {
     char errMsg[128];
     stringstream select(stringstream::out), upsert(stringstream::out);
-    int id= hashCode(stat + "-" + category);
+    int id= Utils::hashCode(stat + "-" + category);
     auto aggregateTable= [&value](void *tableName, int argc, char **argv, char **colName) -> int {
         value+= atol(argv[2]);
+        return 0;
     };
 
     select << "select * from aggregate where id=" << id;
@@ -112,21 +119,22 @@ Content::Content& updateAggregate(const std::string &category, const std::string
 
     upsert << "replace into aggregate (id, stat, value, category) values (" << 
         id << ", coalesce(( select stat from aggregate where id=" << id << "),\'" << stat << "\'), \'" << value << 
-        "\', coalesce(( select category from aggregate where id=" << id << "),\'" << category << "\;));";
+        "\', coalesce(( select category from aggregate where id=" << id << "),\'" << category << "\'));";
     sqlite3_exec(db, upsert.str().c_str(), NULL, NULL, errMsg);
 
     return *this;
 }
 
-Content::Content& updateRecord(const std::string &steamID64, int wins, int losses, int disconnects) {
+Content& Content::updateRecord(const std::string &steamID64, int wins, int losses, int disconnects) {
     char errMsg[128];
     stringstream select(stringstream::out), upsert(stringstream::out);
-    int id= hashCode(steamID64);
+    int id= Utils::hashCode(steamID64);
     auto recordTable= [&wins, &losses, &disconnects](void *tableName, int argc, char **argv, char **colName) -> int {
         wins+= atoi(argv[2]);
         losses+= atoi(argv[3]);
         disconnects+= atoi(argv[4]);
-    }
+        return 0;
+    };
 
     select << "select * from records where id=" << id;
     sqlite3_exec(db, select.str().c_str(), recordTable, NULL, &errMsg);
@@ -139,12 +147,13 @@ Content::Content& updateRecord(const std::string &steamID64, int wins, int losse
     return *this;
 }
 
-Content::Content& updateDeaths(const std::string &name, int value) {
+Content& Content::updateDeaths(const std::string &name, int value) {
     char errMsg[128];
     stringstream select(stringstream::out), upsert(stringstream::out);
-    int id= hashCode(name);
+    int id= Utils::hashCode(name);
     auto deathTable= [&value](void *tableName, int argc, char **argv, char **colName) -> int {
         value+= atoi(argv[2]);
+        return 0;
     };
 
     select << "select * from deaths where id=" << id;
