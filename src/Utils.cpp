@@ -19,14 +19,17 @@ int Utils::hashCode(const std::string &str) {
 std::vector<std::string> Utils::split(const std::string &str, char separator) {
     vector<string> elems;
     size_t i= 0;
-    size_t loc= 0;
 
-    while(loc >= 0 && i < str.size()) {
-        loc= str.find(separator, i);
-        if (loc != i) {
+    while(i < str.size()) {
+        size_t loc= str.find(separator, i);
+
+        if (loc == string::npos) {
+            elems.push_back(str.substr(i, loc));
+            i= str.size();
+        } else {
             elems.push_back(str.substr(i, (loc - i)));
+            i= loc + 1;
         }
-        i= loc + 1;
     }
     return elems;
 }
